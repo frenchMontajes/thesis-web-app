@@ -1,43 +1,99 @@
 # ============================================================
 # NOTE: This is a DEVELOPMENT/SETUP version only.
-# Not final — model path, transforms, and class mapping
-# should be updated once training is complete.
+# Inference logic for Siamese Network signature verification.
+# Label mapping: 1 = Genuine, 0 = Forged
+# Uses Euclidean distance + EER threshold for classification.
+# TODO: Update EER_THRESHOLD once finalized from training metrics.
 # ============================================================
 
 import torch
+import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
 import io
 
-# TODO: Update this path to your final trained model file
-model = torch.load("model/signature_model.pt", map_location="cpu")
+from model import DeepCNN, SiameseNetwork
+from config import MODEL_PATH
+
+# ─────────────────────────────
+# Load model once at startup
+# ─────────────────────────────
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+backbone = DeepCNN().to(device)
+model = SiameseNetwork(backbone).to(device)
+
+# Load saved weights
+state_dict = torch.load(MODEL_PATH, map_location=device)
+model.load_state_dict(state_dict)
 model.eval()
 
-# TODO: Ensure these transforms match exactly what was used during training
+# ─────────────────────────────
+# EER Threshold
+# TODO: Replace this value with your actual EER threshold from training
+# THIS IS MOCK ONLY 
+# ─────────────────────────────
+EER_THRESHOLD = -0.5  # placeholder pdate after checking your metrics notebook 
+
+# ─────────────────────────────
+# Preprocessing
+# Must match training preprocessing exactly
+# ─────────────────────────────
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
-    transforms.Grayscale(),
+    transforms.Grayscale(),          # 1 channel — matches Conv2d(1, ...)
     transforms.ToTensor(),
     transforms.Normalize([0.5], [0.5]),
 ])
 
-async def classify_signature(file):
-    contents = await file.read()
-    img = Image.open(io.BytesIO(contents)).convert("RGB")
-    tensor = transform(img).unsqueeze(0)
+def preprocess(file_bytes: bytes) -> torch.Tensor:
+    img = Image.open(io.BytesIO(file_bytes)).convert("L")
+    tensor = transform(img).unsqueeze(0).to(device)
+    return tensor
 
-    with torch.no_grad():
-        output = model(tensor)
-        prob = torch.softmax(output, dim=1)
-        confidence, pred = torch.max(prob, 1)
 
-    # Label mapping: 1 = genuine, 0 = forged
-    # TODO: Confirm this matches your training label encoding before finalizing
-    label = "genuine" if pred.item() == 1 else "forged"
-
+# ─────────────────────────────
+# TODO: Remove mock and switch to real inference below
+#       once retraining is complete
+# ─────────────────────────────
+async def classify_signature(reference_file, test_file):
+    # MOCK RESPONSE — remove this block when model is ready
     return {
-        "label": label,
-        "confidence": round(confidence.item(), 4),
-        "filename": file.filename,
-        "message": f"Signature classified as {label}."
+        "label": "genuine",
+        "confidence": 0.8342,
+        "distance": 0.3785,
+        "score": -0.3785,
+        "reference_filename": reference_file.filename,
+        "test_filename": test_file.filename,
+        "message": "MOCK RESPONSE — model not yet connected."
     }
+
+
+# ─────────────────────────────
+# REAL INFERENCE — uncomment this when retraining is done
+# ─────────────────────────────
+# async def classify_signature(reference_file, test_file):
+#     ref_bytes  = await reference_file.read()
+#     test_bytes = await test_file.read()
+#
+#     ref_tensor  = preprocess(ref_bytes)
+#     test_tensor = preprocess(test_bytes)
+#
+#     with torch.no_grad():
+#         distance, _, _ = model(ref_tensor, test_tensor)
+#
+#     distance_val = distance.item()
+#     score = -distance_val
+#
+#     label = "genuine" if score >= EER_THRESHOLD else "forged"
+#     confidence = round(float(torch.sigmoid(torch.tensor(score)).item()), 4)
+#
+#     return {
+#         "label": label,
+#         "confidence": confidence,
+#         "distance": round(distance_val, 4),
+#         "score": round(score, 4),
+#         "reference_filename": reference_file.filename,
+#         "test_filename": test_file.filename,
+#         "message": f"Signature classified as {label}."
+#     }

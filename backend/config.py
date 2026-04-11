@@ -16,7 +16,7 @@ DEBUG    = os.getenv("DEBUG", "False") == "True"
 
 # Model Configuration
 # TODO: Update MODEL_PATH once your trained model is finalized
-MODEL_PATH = os.getenv("MODEL_PATH", "model/signature_model.pt")
+MODEL_PATH = os.getenv("MODEL_PATH", "model/siamese_auc0.9081.pth")
 
 # CORS Configuration
 # TODO: Restrict ALLOWED_ORIGINS to your frontend URL in production
