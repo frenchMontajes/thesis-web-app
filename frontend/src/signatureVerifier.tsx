@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import { predictSignature, type PredictionResponse } from "./api/predict";
+import { getErrorMessage } from "./utils/errorHandler";
+
 
 interface FileSlotProps {
   label: string;
@@ -127,14 +129,19 @@ const SignatureVerifier = () => {
 
   const handleSubmit = async () => {
     if (!referenceFile || !testFile) return;
+
     setLoading(true);
     setError(null);
     setResult(null);
+
     try {
       const data = await predictSignature(referenceFile, testFile);
       setResult(data);
-    } catch {
-      setError("Failed to connect to backend. Please try again.");
+
+    } catch (err: unknown) {
+      console.error("🔥 UI ERROR:", err);
+      setError(getErrorMessage(err));
+
     } finally {
       setLoading(false);
     }

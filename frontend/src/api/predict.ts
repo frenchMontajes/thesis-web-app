@@ -1,10 +1,10 @@
 import api from "./api";
 
 export interface PredictionResponse {
-  label: string;           // "genuine" or "forged"
-  confidence: number;      // 0.0 - 1.0
-  distance: number;        // raw Euclidean distance
-  score: number;           // inverted distance
+  label: string;           
+  confidence: number;      
+  distance: number;        
+  score: number;           
   reference_filename: string;
   test_filename: string;
   message: string;
