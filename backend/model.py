@@ -19,7 +19,6 @@ class DeepCNN(nn.Module):
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Dropout(p=0.5),
 
             # Stack 2
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
@@ -39,31 +38,38 @@ class DeepCNN(nn.Module):
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Dropout(0.3),
+            nn.Dropout(0.5),
 
             # Stack 5
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Dropout(0.3),
+            nn.Dropout(0.5),
         )
 
+        # Global Average Pooling
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
 
+        # Embedding head
         self.embedding = nn.Sequential(
             nn.Dropout(0.5),
             nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(256, 128)
+            nn.Dropout(0.3),
+            nn.Linear(256, 128),
+        
         )
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.gap(x)
-        x = torch.flatten(x, 1)
-        x = self.embedding(x)
+        x = self.features(x)        # [B, 256, H, W]
+        x = self.gap(x)             # [B, 256, 1, 1]
+        x = torch.flatten(x, 1)     # [B, 256]
+        x = self.embedding(x)       # [B, 128]
+        
+        # Normalize embeddings
         x = F.normalize(x, p=2, dim=1)
+
         return x
 
 
