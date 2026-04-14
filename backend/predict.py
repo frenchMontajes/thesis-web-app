@@ -38,8 +38,7 @@ model.eval()
 # ─────────────────────────────
 # EER Threshold
 # ─────────────────────────────
-EER_THRESHOLD = -0.5
-# EER_THRESHOLD = -0.1309
+EER_THRESHOLD = -0.5388
 
 # ─────────────────────────────
 # Base transform — matches Dataset.base_transform exactly
@@ -70,10 +69,6 @@ def _opencv_preprocess(img_bytes: bytes,
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # ── Step 3: Inversion ──
-    # Training images are stored as WHITE INK on BLACK background (mean ~4.8)
-    # Uploaded signatures are typically DARK INK on WHITE paper (mean ~200+)
-    # FIX: invert when mean > 127 (light background) so ink becomes white on black
-    # Old code was `< 127` which never triggered for normal scanned signatures
     if np.mean(gray) < 127:
         gray = cv2.bitwise_not(gray)
 
@@ -150,6 +145,27 @@ def preprocess_signature(img_bytes: bytes) -> torch.Tensor:
     return tensor.unsqueeze(0).to(device)         # [1, 1, 155, 220]
 
 
+
+# ─────────────────────────────
+# SANITIY CHECK
+# ─────────────────────────────
+
+#  Genuine pair (same person, different samples)
+# distance  : 0.15 – 0.45
+# score     : -0.15 to -0.45
+# verdict   : GENUINE  ✓
+
+# # Forged pair (different person imitating)
+# distance  : 0.60 – 1.20
+# score     : -0.60 to -1.20
+# verdict   : FORGED   ✓
+
+# # Same image vs itself (sanity check)
+# distance  : ~0.0000
+# score     : ~0.0000
+# verdict   : GENUINE  ✓
+
+
 # ─────────────────────────────
 # Confidence calibration
 # Anchored at EER threshold so boundary → 0.5 confidence
@@ -192,7 +208,3 @@ async def classify_signature(reference_file, test_file) -> dict:
         "test_filename"      : test_file.filename,
         "message"            : f"Signature classified as {label}.",
     }
-
-
-
-
