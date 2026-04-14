@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { predictSignature, type PredictionResponse } from "./api/predict";
 import { getErrorMessage } from "./utils/errorHandler";
 
-
 interface FileSlotProps {
   label: string;
   sublabel: string;
@@ -127,6 +126,18 @@ const SignatureVerifier = () => {
 
   const canSubmit = referenceFile && testFile && !loading;
 
+  // Clears result + error whenever a slot is set to null (file removed)
+  const handleFileChange = (
+    setter: React.Dispatch<React.SetStateAction<File | null>>,
+    file: File | null
+  ) => {
+    setter(file);
+    if (file === null) {
+      setResult(null);
+      setError(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!referenceFile || !testFile) return;
 
@@ -137,11 +148,9 @@ const SignatureVerifier = () => {
     try {
       const data = await predictSignature(referenceFile, testFile);
       setResult(data);
-
     } catch (err: unknown) {
       console.error("🔥 UI ERROR:", err);
       setError(getErrorMessage(err));
-
     } finally {
       setLoading(false);
     }
@@ -170,7 +179,7 @@ const SignatureVerifier = () => {
               label="Drop reference"
               sublabel="The known genuine signature"
               file={referenceFile}
-              onFile={setReferenceFile}
+              onFile={(f) => handleFileChange(setReferenceFile, f)}
             />
           </div>
           <div>
@@ -179,7 +188,7 @@ const SignatureVerifier = () => {
               label="Drop test"
               sublabel="The signature to verify"
               file={testFile}
-              onFile={setTestFile}
+              onFile={(f) => handleFileChange(setTestFile, f)}
             />
           </div>
         </div>
