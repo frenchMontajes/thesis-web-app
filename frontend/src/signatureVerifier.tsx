@@ -99,7 +99,7 @@ const FileSlot = ({ label, sublabel, file, onFile }: FileSlotProps) => {
   );
 };
 
-const ConfidenceBadge = ({ confidence, label }: { confidence: number; label: string }) => {
+const DistanceBadge = ({ distance, label }: { distance: number; label: string }) => {
   const isGenuine = label.toLowerCase().includes("genuine") || label.toLowerCase().includes("match");
   return (
     <div className={[
@@ -229,19 +229,19 @@ const SignatureVerifier = () => {
           <div className="mt-5 bg-white border border-stone-200 rounded-2xl overflow-hidden">
             <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
               <span className="text-base font-semibold text-stone-800">Result</span>
-              <ConfidenceBadge confidence={result.confidence} label={result.label} />
+              <DistanceBadge distance={result.distance} label={result.label} />
             </div>
             <div className="px-6 py-5 space-y-4">
-              {/* Confidence bar */}
+              {/* Distance bar */}
               <div>
                 <div className="flex justify-between text-sm text-stone-400 mb-2">
-                  <span>Confidence</span>
-                  <span className="font-semibold text-stone-700">{(result.confidence * 100).toFixed(1)}%</span>
+                  <span>Distance</span>
+                  <span className="font-semibold text-stone-700">{(result.distance).toFixed(1)}%</span>
                 </div>
                 <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-stone-800 rounded-full transition-all duration-500"
-                    style={{ width: `${(result.confidence * 100).toFixed(1)}%` }}
+                    style={{ width: `${Math.min(result.distance * 100, 100).toFixed(1)}%` }}
                   />
                 </div>
               </div>

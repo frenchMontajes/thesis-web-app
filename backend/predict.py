@@ -38,7 +38,8 @@ model.eval()
 # ─────────────────────────────
 # EER Threshold
 # ─────────────────────────────
-EER_THRESHOLD = -0.5388
+# EER_THRESHOLD = -0.5388
+EER_THRESHOLD = -0.2284
 
 # ─────────────────────────────
 # Base transform — matches Dataset.base_transform exactly
@@ -68,7 +69,7 @@ def _opencv_preprocess(img_bytes: bytes,
     # ── Step 2: Grayscale ──
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # ── Step 3: Inversion ──
+    # # ── Step 3: Inversion ──
     if np.mean(gray) < 127:
         gray = cv2.bitwise_not(gray)
 
@@ -195,7 +196,7 @@ async def classify_signature(reference_file, test_file) -> dict:
     distance_val = float(distance.item())
     score        = -distance_val
 
-    label      = "genuine" if score >= EER_THRESHOLD else "forged"
+    label      = "Genuine" if score >= EER_THRESHOLD else "Forged"
     confidence = _compute_confidence(distance_val, label)
 
     return {
